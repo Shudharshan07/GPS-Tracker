@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #000000;
+  color: rgba(255, 255, 255, 0.87);
+  font-family: 'Google Sans', 'Roboto', system-ui, -apple-system, sans-serif;
+}
+
+/* Google-style surface elevations (black + opacity) */
+.surface-1 {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.surface-2 {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.surface-3 {
+  background-color: rgba(255, 255, 255, 0.11);
+}
+.surface-dark {
+  background-color: rgba(18, 18, 18, 0.98);
+}
+.surface-black {
+  background-color: rgba(0, 0, 0, 0.4);
+}
