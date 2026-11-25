@@ -1,49 +1,62 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import { config } from './config/env.js';
 import authRoutes from './routes/auth.js';
-import { authMiddleware } from './middleware/auth.js';
+import gpsRoutes from './routes/gps.js';
 import { startSimulation } from './utils/simulator.js';
-import { Vehicle } from './models/Vehicle.js';
-
-const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/gps-tracking';
 
 const app = express();
-app.use(cors({ origin: ['http://localhost:5173', 'http://127.0.0.1:5173'] }));
+
+app.use(cors({ origin: config.corsOrigins }));
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
-
-// Protected GPS route — requires Authorization: Bearer <token>
-app.get('/api/gps', authMiddleware, async (req, res) => {
-  try {
-    const vehicles = await Vehicle.find();
-    res.json(vehicles);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching GPS data' });
-  }
+app.get('/api/health', (req, res) => {
+  const dbReady = mongoose.connection.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({
+    status: dbReady ? 'ok' : 'degraded',
+    database: dbReady ? 'connected' : 'disconnected',
+  });
 });
 
+app.use('/api/auth', authRoutes);
+app.use('/api/gps', gpsRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
 app.use((err, req, res, next) => {
-  res.status(500).json({ message: err.message || 'Server error' });
+  const status = err.status || 500;
+  res.status(status).json({ message: err.message || 'Server error' });
 });
 
 async function start() {
   try {
-    console.log('Connecting to:', MONGODB_URI.replace(/:([^:@]{1,})@/, ':****@'));
-    await mongoose.connect(MONGODB_URI, { family: 4 });
+    console.log('Connecting to:', config.mongodbUri.replace(/:([^:@]{1,})@/, ':****@'));
+    await mongoose.connect(config.mongodbUri, { family: 4 });
     console.log('MongoDB connected');
-  } catch (e) {
-    console.error('MongoDB connection failed:', e.message);
+  } catch (error) {
+    console.error('MongoDB connection failed:', error.message);
     process.exit(1);
   }
 
-  startSimulation(5000); // Update every 5 seconds
+  const stopSimulation = await startSimulation(config.simulationIntervalMs);
+  const server = app.listen(config.port, () => {
+    console.log(`Server running on http://localhost:${config.port}`);
+  });
 
-  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  const shutdown = async (signal) => {
+    console.log(`${signal} received, shutting down gracefully...`);
+    stopSimulation();
+    server.close(async () => {
+      await mongoose.connection.close();
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 start();
