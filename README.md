@@ -1,3 +1,7 @@
+<p align="center">
+  <img src=".github/gps-pin.svg" width="100" alt="GPS Location Icon" />
+</p>
+
 # Vehicle GPS Tracking System
 
 A full-stack MERN (MongoDB, Express, React, Node.js) application for real-time monitoring and management of vehicle fleets. This system provides a live map interface, telemetry data, and automated location simulations.
@@ -36,12 +40,23 @@ A full-stack MERN (MongoDB, Express, React, Node.js) application for real-time m
 
 ### Prerequisites
 - Node.js installed on your machine.
-- MongoDB instance (local or Atlas).
+- Docker and Docker Compose (for running the local MongoDB server).
+
+### Database Setup (MongoDB via Docker)
+From the project root, start the MongoDB container:
+```bash
+docker compose up -d
+```
+
+To stop it later:
+```bash
+docker compose down
+```
 
 ### Backend Setup
 1. Navigate to the backend directory.
 2. Install dependencies: `npm install`
-3. Create a .env file based on .env.example and provide your MONGODB_URI and JWT_SECRET.
+3. Create a `.env` file based on `.env.example` (the default `MONGODB_URI=mongodb://localhost:27017/gps-tracking` connects to the Docker MongoDB container).
 4. Start the server: `npm run dev`
 
 ### Frontend Setup
